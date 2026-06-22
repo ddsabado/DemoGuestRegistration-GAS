@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guest Registration</title>
+  <?!= include('Styles'); ?>
+</head>
+<body>
+  <h2>Guest Registration</h2>
+  <div class="muted">Parking options may change based on check-in date. Upload IDs directly here.</div>
+
+  <div id="stepForm">
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="email">Email Address</label>
+          <input id="email" type="email" placeholder="guest@email.com" required />
+        </div>
+        <div>
+          <label for="plateNumber">Plate Number (optional)</label>
+          <input id="plateNumber" type="text" placeholder="ABC 1234" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="checkInDate">Check-in date</label>
+          <input id="checkInDate" type="date" required />
+        </div>
+        <div>
+          <label for="checkOutDate">Checkout date</label>
+          <input id="checkOutDate" type="date" required />
+        </div>
+      </div>
+
+      <label for="parkingOption">Choose your parking below</label>
+      <select id="parkingOption" required></select>
+
+      <div style="margin-top:10px">
+        <span id="sameDayBadge" class="pill warn hidden">Same-day booking: Only Condo Pay / No Parking</span>
+      </div>
+
+      <div id="msg1" class="error hidden"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 6px">Guest Details (up to 4)</h3>
+      <div class="muted">If fewer guests, leave the rest blank. Upload 1 valid ID file per guest.</div>
+      <div class="guestGrid" id="guestGrid"></div>
+      <div id="msgGuests" class="error hidden"></div>
+    </div>
+
+    <div class="btnRow">
+      <button id="reviewBtn" class="primary">Review</button>
+    </div>
+  </div>
+
+  <div id="stepReview" class="hidden">
+    <div class="card">
+      <h3 id="reviewHeading" tabindex="-1" style="margin:0 0 6px">Review your details</h3>
+      <div class="muted">Confirm everything looks correct. Then submit.</div>
+
+      <table class="reviewTable" id="reviewTable"></table>
+
+      <div id="msg2" class="error hidden"></div>
+      <div id="ok2" class="ok hidden"></div>
+    </div>
+
+    <div class="btnRow">
+      <button id="backBtn" class="secondary">Back</button>
+      <button id="submitBtn" class="primary">Submit</button>
+    </div>
+  </div>
+
+<?!= include('RegistrationFormScripts'); ?>
+</body>
+</html>

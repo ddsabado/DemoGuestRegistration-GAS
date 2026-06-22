@@ -1,0 +1,39 @@
+<style>
+  body { font-family: Arial, sans-serif; margin: 16px; }
+  .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  label { display:block; font-weight:600; margin-top: 10px; }
+  input, select { width: 100%; padding: 10px; margin-top: 6px; box-sizing: border-box; }
+  input.invalid { border: 2px solid #b00020; outline-color: #b00020; background: #fff7f7; }
+  .row { display:flex; gap: 12px; }
+  .row > div { flex:1; }
+  .muted { color:#666; font-size: 13px; }
+  .error { color:#b00020; margin-top:10px; }
+  .ok { color:#0b6b0b; margin-top:10px; }
+  .btnRow { display:flex; gap: 10px; justify-content:flex-end; }
+  button { padding: 12px 14px; border: 0; border-radius: 10px; cursor:pointer; }
+  button.primary { background:#111; color:#fff; }
+  button.secondary { background:#eee; }
+  button:disabled { opacity:.6; cursor:not-allowed; }
+  .guestGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 800px) { .row { flex-direction: column; } .guestGrid { grid-template-columns: 1fr; } }
+  .hidden { display:none; }
+  .pill {
+    display:inline-block;
+    padding:6px 12px;
+    border-radius:999px;
+    background:#f2f2f2;
+    font-size:12px;
+  }
+  .pill.warn {
+    background: #fdecea;
+    border: 1px solid #f5c6cb;
+    color: #b00020;
+    font-weight: 700;
+  }
+  .reviewTable { width:100%; border-collapse: collapse; margin-top:10px; }
+  .reviewTable td { border-top: 1px solid #eee; padding: 8px 0; vertical-align: top; }
+  .reviewTable td:first-child { width: 220px; color:#666; }
+  .small { font-size: 12px; }
+  .fieldError { color:#b00020; font-size: 12px; margin-top: 4px; }
+  .fileList { margin: 6px 0 0; padding-left: 18px; }
+</style>

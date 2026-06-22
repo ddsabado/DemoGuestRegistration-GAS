@@ -1,0 +1,483 @@
+<script>
+  const PARKING = {
+    OFFSITE: "Free Offsite Parking",
+    BASEMENT: "Basement Pay Parking (₱250 - 24hrs/multiple entries)",
+    CONDO: "Condo Pay Parking (₱400 - 24hrs/multiple entries)",
+    NONE: "I won't be availing any parking"
+  };
+
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  let checkInTouched = false;
+
+  const el = (id) => document.getElementById(id);
+  const msg1 = el("msg1");
+  const msg2 = el("msg2");
+  const ok2  = el("ok2");
+  const msgGuests = el("msgGuests");
+
+  const reviewBtn = el("reviewBtn");
+  const backBtn = el("backBtn");
+  const submitBtn = el("submitBtn");
+
+  const stepForm = el("stepForm");
+  const stepReview = el("stepReview");
+  const guestGrid = el("guestGrid");
+
+  for (let i = 1; i <= 4; i++) {
+    const wrap = document.createElement("div");
+    wrap.className = "card";
+    wrap.style.margin = "0";
+    wrap.style.borderRadius = "12px";
+    wrap.style.padding = "12px";
+
+    wrap.innerHTML = `
+      <div style="font-weight:700; margin-bottom:6px">Guest ${i}</div>
+
+      <label for="guestName${i}">Full Name</label>
+      <input id="guestName${i}" data-g="${i}" data-f="name" type="text" maxlength="50" placeholder="LASTNAME, FIRSTNAME" />
+
+      <label for="guestAge${i}">Age</label>
+      <input id="guestAge${i}" data-g="${i}" data-f="age" type="number" min="0" max="99" placeholder="e.g. 30" />
+      <div id="guestAgeError${i}" class="fieldError hidden">Age must be a whole number below 100.</div>
+
+      <label for="guestIdType${i}">Valid ID Type</label>
+      <input id="guestIdType${i}" data-g="${i}" data-f="idType" type="text" placeholder="e.g. Passport / Driver's License" />
+
+      <label for="guestIdUpload${i}">Upload Valid ID (image/pdf)</label>
+      <input id="guestIdUpload${i}" data-g="${i}" data-f="idUpload" type="file" accept="image/*,application/pdf" />
+      <div class="muted small">Only 1 file is allowed per guest.</div>
+    `;
+    guestGrid.appendChild(wrap);
+  }
+
+  for (let i = 1; i <= 4; i++) {
+    el(`guestAge${i}`).addEventListener("input", () => validateAgeField(i));
+    el(`guestAge${i}`).addEventListener("blur", () => validateAgeField(i));
+  }
+
+  function setParkingOptions(isSameDayFlag) {
+    const select = el("parkingOption");
+    const badge = el("sameDayBadge");
+
+    select.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select an option...";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+
+    const add = (val) => {
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = val;
+      select.appendChild(opt);
+    };
+
+    if (isSameDayFlag) {
+      if (checkInTouched) badge.classList.remove("hidden");
+      else badge.classList.add("hidden");
+
+      add(PARKING.CONDO);
+      add(PARKING.NONE);
+    } else {
+      badge.classList.add("hidden");
+      add(PARKING.OFFSITE);
+      add(PARKING.BASEMENT);
+      add(PARKING.CONDO);
+      add(PARKING.NONE);
+    }
+  }
+
+  function isSameDay(isoDateStr) {
+    if (!isoDateStr) return false;
+    const selected = new Date(isoDateStr + "T00:00:00");
+    const today = new Date();
+    return selected.getFullYear() === today.getFullYear()
+      && selected.getMonth() === today.getMonth()
+      && selected.getDate() === today.getDate();
+  }
+
+  function dateOnlyMs(isoDateStr) {
+    const d = new Date(isoDateStr + "T00:00:00");
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  }
+
+  function toIsoDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function addDays(isoDateStr, days) {
+    const next = new Date(dateOnlyMs(isoDateStr) + days * MS_PER_DAY);
+    return toIsoDate(next);
+  }
+
+  function showError(targetEl, text) {
+    targetEl.textContent = text;
+    targetEl.classList.remove("hidden");
+  }
+
+  function clearError(targetEl) {
+    targetEl.textContent = "";
+    targetEl.classList.add("hidden");
+  }
+
+  function validateAgeField(guestNumber) {
+    const input = el(`guestAge${guestNumber}`);
+    const error = el(`guestAgeError${guestNumber}`);
+    const value = input.value.trim();
+    const age = Number(value);
+    const isValid = value === "" || (Number.isInteger(age) && age >= 0 && age < 100);
+
+    input.classList.toggle("invalid", !isValid);
+    error.classList.toggle("hidden", isValid);
+    input.setCustomValidity(isValid ? "" : "Age must be a whole number below 100.");
+
+    return isValid;
+  }
+
+  function validateAllAgeFields() {
+    let isValid = true;
+
+    for (let i = 1; i <= 4; i++) {
+      if (!validateAgeField(i)) {
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  }
+
+  function showOk(text) {
+    msg2.classList.add("hidden");
+    ok2.textContent = text;
+    ok2.classList.remove("hidden");
+  }
+
+  function showSuccessPage(text) {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    document.body.innerHTML = `
+      <div style="
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        box-sizing: border-box;
+      ">
+        <div style="max-width: 520px;">
+          <div style="font-size: 22px; font-weight: 700; line-height: 1.4;">${escapeHtml(text)}</div>
+          <div style="margin-top: 8px; font-size: 18px; line-height: 1.5;">You may close this window.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildSubmissionErrorMessage(error) {
+    const baseMessage = error && error.message ? error.message : String(error || "Submission failed.");
+    return `${baseMessage} Please try again and if the issue persists, contact the form owners.`;
+  }
+
+  function scrollReviewToTop() {
+    const reviewHeading = el("reviewHeading");
+
+    requestAnimationFrame(() => {
+      stepReview.scrollIntoView({ block: "start", behavior: "auto" });
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+
+      if (reviewHeading) {
+        reviewHeading.focus({ preventScroll: true });
+      }
+    });
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function collectGuests() {
+    const guests = [{}, {}, {}, {}];
+
+    document.querySelectorAll("[data-g][data-f]").forEach(input => {
+      const gi = Number(input.dataset.g) - 1;
+      const f = input.dataset.f;
+
+      if (f === "idUpload") return;
+      guests[gi][f] = (input.value || "").trim();
+    });
+
+    document.querySelectorAll('input[type="file"][data-g][data-f="idUpload"]').forEach(inp => {
+      const gi = Number(inp.dataset.g) - 1;
+      guests[gi].idUploadEl = inp;
+    });
+
+    return guests
+      .map(g => ({
+        name: (g.name || "").trim(),
+        age: (g.age || "").trim(),
+        idType: (g.idType || "").trim(),
+        idUploadEl: g.idUploadEl
+      }))
+      .filter(g => g.name !== "");
+  }
+
+  function validateGuestFields() {
+    const guestInputs = [];
+    for (let i = 1; i <= 4; i++) {
+      const guest = {
+        number: i,
+        name: el(`guestName${i}`).value.trim(),
+        age: el(`guestAge${i}`).value.trim(),
+        idType: el(`guestIdType${i}`).value.trim(),
+        files: el(`guestIdUpload${i}`).files
+      };
+      guestInputs.push(guest);
+    }
+
+    const guest1 = guestInputs[0];
+    if (!guest1.name) throw new Error("Guest 1 full name is required.");
+    if (!guest1.age) throw new Error("Guest 1 age is required.");
+    if (!guest1.idType) throw new Error("Guest 1 valid ID type is required.");
+    if (!guest1.files.length) throw new Error("Guest 1 valid ID upload is required.");
+
+    guestInputs.forEach(guest => {
+      const hasAnyValue = guest.name || guest.age || guest.idType || guest.files.length;
+
+      if (!hasAnyValue) return;
+      if (guest.name.length > 50) throw new Error(`Guest ${guest.number} full name must be 50 characters or fewer.`);
+      if (guest.files.length > 1) throw new Error(`Guest ${guest.number} can only upload 1 valid ID file.`);
+
+      if (guest.age) {
+        const age = Number(guest.age);
+        if (!Number.isInteger(age) || age < 0 || age >= 100) {
+          throw new Error(`Guest ${guest.number} age must be a whole number below 100.`);
+        }
+      }
+    });
+  }
+
+  function buildPayloadForReview() {
+    const payload = {
+      email: el("email").value.trim(),
+      plateNumber: el("plateNumber").value.trim().toUpperCase(),
+      checkInDate: el("checkInDate").value,
+      checkOutDate: el("checkOutDate").value,
+      parkingOption: el("parkingOption").value,
+      guests: collectGuests()
+    };
+
+    clearError(msg1);
+    clearError(msgGuests);
+    clearError(msg2);
+    ok2.classList.add("hidden");
+
+    if (!payload.email) throw new Error("Email is required.");
+    if (!payload.checkInDate) throw new Error("Check-in date is required.");
+    if (!payload.checkOutDate) throw new Error("Checkout date is required.");
+    if (!payload.parkingOption) throw new Error("Please choose a parking option.");
+    if (!validateAllAgeFields()) throw new Error("Please fix the highlighted age field.");
+
+    const todayMs = dateOnlyMs(toIsoDate(new Date()));
+    if (dateOnlyMs(payload.checkInDate) < todayMs) {
+      throw new Error("Check-in date cannot be in the past.");
+    }
+
+    if (dateOnlyMs(payload.checkOutDate) < dateOnlyMs(payload.checkInDate)) {
+      throw new Error("Checkout date cannot be earlier than check-in date.");
+    }
+
+    if (dateOnlyMs(payload.checkOutDate) > dateOnlyMs(payload.checkInDate) + 30 * MS_PER_DAY) {
+      throw new Error("Checkout date cannot be more than 30 days from check-in date.");
+    }
+
+    if (isSameDay(payload.checkInDate)) {
+      const invalid = payload.parkingOption === PARKING.OFFSITE || payload.parkingOption === PARKING.BASEMENT;
+      if (invalid) throw new Error("Same-day bookings only allow Condo Pay Parking or No Parking.");
+    }
+
+    validateGuestFields();
+    payload.guests.forEach(g => g.name = g.name.toUpperCase());
+    return payload;
+  }
+
+  function renderReview(payload) {
+    const t = el("reviewTable");
+    t.innerHTML = "";
+
+    const addRow = (k, v) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${escapeHtml(k)}</td><td>${v}</td>`;
+      t.appendChild(tr);
+    };
+
+    addRow("Email", escapeHtml(payload.email));
+    addRow("Check-in", escapeHtml(payload.checkInDate));
+    addRow("Checkout", escapeHtml(payload.checkOutDate));
+    addRow("Parking", escapeHtml(payload.parkingOption));
+    addRow("Plate Number", payload.plateNumber ? escapeHtml(payload.plateNumber) : "<span class='muted'>N/A</span>");
+
+    if (!payload.guests.length) {
+      addRow("Guests", "<span class='muted'>No guests entered</span>");
+      return;
+    }
+
+    payload.guests.forEach((g, idx) => {
+      const files = g.idUploadEl?.files ? Array.from(g.idUploadEl.files) : [];
+      const fileList = files.length
+        ? `<ul class="fileList">${files.map(f => `<li>${escapeHtml(f.name)}</li>`).join("")}</ul>`
+        : `<span class="muted">No files uploaded</span>`;
+
+      addRow(
+        `Guest ${idx + 1}`,
+        `<div><strong>${escapeHtml(g.name)}</strong></div>
+         <div class="muted">Age: ${escapeHtml(g.age || "N/A")} | ID Type: ${escapeHtml(g.idType || "N/A")}</div>
+         <div class="small muted" style="margin-top:6px">Uploads:${fileList}</div>`
+      );
+    });
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        const base64 = String(result).split(",")[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadFilesForGuests(payload) {
+    const uploadJobs = [];
+
+    payload.guests.forEach((g, gi) => {
+      const files = g.idUploadEl?.files ? Array.from(g.idUploadEl.files) : [];
+      files.forEach(file => uploadJobs.push({ gi, file }));
+    });
+
+    if (!uploadJobs.length) {
+      payload.guests.forEach(g => g.idFiles = []);
+      payload.guests.forEach(g => delete g.idUploadEl);
+      return payload;
+    }
+
+    const toSend = [];
+    for (const job of uploadJobs) {
+      const b64 = await fileToBase64(job.file);
+      toSend.push({
+        gi: job.gi,
+        name: job.file.name,
+        mimeType: job.file.type || "application/octet-stream",
+        dataBase64: b64
+      });
+    }
+
+    const uploaded = await new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(err => reject(err))
+        .uploadGuestIdFiles(toSend.map(x => ({
+          name: x.name,
+          mimeType: x.mimeType,
+          dataBase64: x.dataBase64
+        })));
+    });
+
+    payload.guests.forEach(g => g.idFiles = []);
+
+    let idx = 0;
+    for (const job of uploadJobs) {
+      const info = uploaded[idx++];
+      if (info) payload.guests[job.gi].idFiles.push(info);
+    }
+
+    payload.guests.forEach(g => delete g.idUploadEl);
+    return payload;
+  }
+
+  el("checkInDate").min = toIsoDate(new Date());
+  setParkingOptions(false);
+
+  el("checkInDate").addEventListener("change", () => {
+    checkInTouched = true;
+    const checkInDate = el("checkInDate").value;
+    el("checkOutDate").min = checkInDate;
+    el("checkOutDate").max = checkInDate ? addDays(checkInDate, 30) : "";
+
+    if (el("checkOutDate").value && checkInDate) {
+      const checkoutMs = dateOnlyMs(el("checkOutDate").value);
+      const checkinMs = dateOnlyMs(checkInDate);
+      if (checkoutMs < checkinMs || checkoutMs > checkinMs + 30 * MS_PER_DAY) {
+        el("checkOutDate").value = "";
+      }
+    }
+
+    setParkingOptions(isSameDay(el("checkInDate").value));
+  });
+
+  reviewBtn.addEventListener("click", () => {
+    try {
+      const payload = buildPayloadForReview();
+      renderReview(payload);
+
+      stepForm.classList.add("hidden");
+      stepReview.classList.remove("hidden");
+      scrollReviewToTop();
+    } catch (e) {
+      showError(msg1, e.message || String(e));
+    }
+  });
+
+  backBtn.addEventListener("click", () => {
+    clearError(msg2);
+    ok2.classList.add("hidden");
+    stepReview.classList.add("hidden");
+    stepForm.classList.remove("hidden");
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  });
+
+  submitBtn.addEventListener("click", async () => {
+    submitBtn.disabled = true;
+    backBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+    clearError(msg2);
+    ok2.classList.add("hidden");
+
+    try {
+      let payload = buildPayloadForReview();
+      payload = await uploadFilesForGuests(payload);
+
+      const res = await new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(err => reject(err))
+          .submitGuestRegistration(payload);
+      });
+
+      showSuccessPage(res.message || "Registration submitted.");
+    } catch (e) {
+      showError(msg2, buildSubmissionErrorMessage(e));
+    } finally {
+      submitBtn.disabled = false;
+      backBtn.disabled = false;
+      submitBtn.textContent = "Submit";
+    }
+  });
+</script>
