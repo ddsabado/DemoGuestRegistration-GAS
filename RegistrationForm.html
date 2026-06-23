@@ -8,33 +8,40 @@
 </head>
 <body>
   <h2>Guest Registration</h2>
-  <div class="muted">Parking options may change based on check-in date. Upload IDs directly here.</div>
+  <p class="page-sub">Fill in your stay details and guest information to complete registration.</p>
+
+  <div class="steps" id="stepIndicator">
+    <div class="step active" id="step1ind"><div class="num">1</div> Stay Details</div>
+    <div class="step-line"></div>
+    <div class="step" id="step2ind"><div class="num">2</div> Review & Submit</div>
+  </div>
 
   <div id="stepForm">
     <div class="card">
+      <div class="card-title">Reservation Info</div>
       <div class="row">
         <div>
           <label for="email">Email Address</label>
           <input id="email" type="email" placeholder="guest@email.com" required />
         </div>
         <div>
-          <label for="plateNumber">Plate Number (optional)</label>
+          <label for="plateNumber">Plate Number <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
           <input id="plateNumber" type="text" placeholder="ABC 1234" />
         </div>
       </div>
 
       <div class="row">
         <div>
-          <label for="checkInDate">Check-in date</label>
+          <label for="checkInDate">Check-in Date</label>
           <input id="checkInDate" type="date" required />
         </div>
         <div>
-          <label for="checkOutDate">Checkout date</label>
+          <label for="checkOutDate">Checkout Date</label>
           <input id="checkOutDate" type="date" required />
         </div>
       </div>
 
-      <label for="parkingOption">Choose your parking below</label>
+      <label for="parkingOption">Parking Option</label>
       <select id="parkingOption" required></select>
 
       <div style="margin-top:10px">
@@ -45,21 +52,21 @@
     </div>
 
     <div class="card">
-      <h3 style="margin:0 0 6px">Guest Details (up to 4)</h3>
+      <div class="card-title">Guest Details <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:.72rem">(up to 4)</span></div>
       <div class="muted">If fewer guests, leave the rest blank. Upload 1 valid ID file per guest.</div>
       <div class="guestGrid" id="guestGrid"></div>
       <div id="msgGuests" class="error hidden"></div>
     </div>
 
     <div class="btnRow">
-      <button id="reviewBtn" class="primary">Review</button>
+      <button id="reviewBtn" class="primary">Review →</button>
     </div>
   </div>
 
   <div id="stepReview" class="hidden">
     <div class="card">
-      <h3 id="reviewHeading" tabindex="-1" style="margin:0 0 6px">Review your details</h3>
-      <div class="muted">Confirm everything looks correct. Then submit.</div>
+      <div class="card-title">Review Your Details</div>
+      <div class="muted">Confirm everything looks correct, then submit.</div>
 
       <table class="reviewTable" id="reviewTable"></table>
 
@@ -68,11 +75,26 @@
     </div>
 
     <div class="btnRow">
-      <button id="backBtn" class="secondary">Back</button>
+      <button id="backBtn" class="secondary">← Back</button>
       <button id="submitBtn" class="primary">Submit</button>
     </div>
   </div>
 
 <?!= include('RegistrationFormScripts'); ?>
+<script>
+  // Step indicator sync
+  document.getElementById('reviewBtn').addEventListener('click', function() {
+    setTimeout(() => {
+      if (!document.getElementById('stepReview').classList.contains('hidden')) {
+        document.getElementById('step1ind').classList.remove('active');
+        document.getElementById('step2ind').classList.add('active');
+      }
+    }, 50);
+  });
+  document.getElementById('backBtn').addEventListener('click', function() {
+    document.getElementById('step1ind').classList.add('active');
+    document.getElementById('step2ind').classList.remove('active');
+  });
+</script>
 </body>
 </html>

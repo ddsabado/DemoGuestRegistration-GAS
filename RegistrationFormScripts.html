@@ -25,13 +25,10 @@
 
   for (let i = 1; i <= 4; i++) {
     const wrap = document.createElement("div");
-    wrap.className = "card";
-    wrap.style.margin = "0";
-    wrap.style.borderRadius = "12px";
-    wrap.style.padding = "12px";
+    wrap.className = "guest-block";
 
     wrap.innerHTML = `
-      <div style="font-weight:700; margin-bottom:6px">Guest ${i}</div>
+      <div class="guest-block-title">Guest ${i}</div>
 
       <label for="guestName${i}">Full Name</label>
       <input id="guestName${i}" data-g="${i}" data-f="name" type="text" maxlength="50" placeholder="LASTNAME, FIRSTNAME" />
@@ -43,9 +40,9 @@
       <label for="guestIdType${i}">Valid ID Type</label>
       <input id="guestIdType${i}" data-g="${i}" data-f="idType" type="text" placeholder="e.g. Passport / Driver's License" />
 
-      <label for="guestIdUpload${i}">Upload Valid ID (image/pdf)</label>
+      <label for="guestIdUpload${i}">Upload Valid ID <span class="small" style="font-weight:400">(image/pdf)</span></label>
       <input id="guestIdUpload${i}" data-g="${i}" data-f="idUpload" type="file" accept="image/*,application/pdf" />
-      <div class="muted small">Only 1 file is allowed per guest.</div>
+      <div class="muted small">1 file per guest only.</div>
     `;
     guestGrid.appendChild(wrap);
   }
