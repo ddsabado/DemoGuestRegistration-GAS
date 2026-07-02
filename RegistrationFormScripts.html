@@ -22,35 +22,77 @@
   const stepForm = el("stepForm");
   const stepReview = el("stepReview");
   const guestGrid = el("guestGrid");
+  const addGuestBtn = el("addGuestBtn");
 
-  for (let i = 1; i <= 4; i++) {
+  let guestCount = 0;
+
+  function createGuestBlock(i) {
     const wrap = document.createElement("div");
     wrap.className = "guest-block";
-
+    wrap.id = `guestBlock${i}`;
     wrap.innerHTML = `
-      <div class="guest-block-title">Guest ${i}</div>
-
-      <label for="guestName${i}">Full Name</label>
-      <input id="guestName${i}" data-g="${i}" data-f="name" type="text" maxlength="50" placeholder="LASTNAME, FIRSTNAME" />
-
-      <label for="guestAge${i}">Age</label>
-      <input id="guestAge${i}" data-g="${i}" data-f="age" type="number" min="0" max="99" placeholder="e.g. 30" />
-      <div id="guestAgeError${i}" class="fieldError hidden">Age must be a whole number below 100.</div>
-
+      <div class="guest-block-header">
+        <div class="guest-block-title">Guest ${i}</div>
+        ${i > 1 ? `<button type="button" class="remove-guest-btn" data-g="${i}" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:0;">✕ Remove</button>` : ''}
+      </div>
+      <div class="guest-row">
+        <div>
+          <label for="guestName${i}">Full Name</label>
+          <input id="guestName${i}" data-g="${i}" data-f="name" type="text" maxlength="50" placeholder="LASTNAME, FIRSTNAME" />
+        </div>
+        <div>
+          <label for="guestAge${i}">Age</label>
+          <input id="guestAge${i}" data-g="${i}" data-f="age" type="number" min="0" max="99" placeholder="e.g. 30" />
+          <div id="guestAgeError${i}" class="fieldError hidden">Age must be a whole number below 100.</div>
+        </div>
+      </div>
       <label for="guestIdType${i}">Valid ID Type</label>
       <input id="guestIdType${i}" data-g="${i}" data-f="idType" type="text" placeholder="e.g. Passport / Driver's License" />
-
       <label for="guestIdUpload${i}">Upload Valid ID <span class="small" style="font-weight:400">(image/pdf)</span></label>
       <input id="guestIdUpload${i}" data-g="${i}" data-f="idUpload" type="file" accept="image/*,application/pdf" />
       <div class="muted small">1 file per guest only.</div>
     `;
-    guestGrid.appendChild(wrap);
+    wrap.querySelector(`#guestAge${i}`)?.addEventListener("input", () => validateAgeField(i));
+    wrap.querySelector(`#guestAge${i}`)?.addEventListener("blur", () => validateAgeField(i));
+    const removeBtn = wrap.querySelector('.remove-guest-btn');
+    if (removeBtn) removeBtn.addEventListener('click', () => removeGuest(i));
+    return wrap;
   }
 
-  for (let i = 1; i <= 4; i++) {
-    el(`guestAge${i}`).addEventListener("input", () => validateAgeField(i));
-    el(`guestAge${i}`).addEventListener("blur", () => validateAgeField(i));
+  function addGuest() {
+    if (guestCount >= 4) return;
+    guestCount++;
+    guestGrid.appendChild(createGuestBlock(guestCount));
+    if (guestCount >= 4) addGuestBtn.disabled = true;
   }
+
+  function removeGuest(i) {
+    const block = el(`guestBlock${i}`);
+    if (block) block.remove();
+    guestCount--;
+    addGuestBtn.disabled = false;
+    // Renumber remaining blocks
+    const blocks = guestGrid.querySelectorAll('.guest-block');
+    blocks.forEach((b, idx) => {
+      const n = idx + 1;
+      b.id = `guestBlock${n}`;
+      b.querySelector('.guest-block-title').textContent = `Guest ${n}`;
+      b.querySelectorAll('[data-g]').forEach(inp => {
+        const f = inp.dataset.f;
+        inp.dataset.g = n;
+        inp.id = `guest${f.charAt(0).toUpperCase() + f.slice(1)}${n}`;
+        if (inp.labels?.[0]) inp.labels[0].htmlFor = inp.id;
+      });
+      const removeBtn = b.querySelector('.remove-guest-btn');
+      if (removeBtn) { removeBtn.dataset.g = n; }
+      if (n === 1 && removeBtn) removeBtn.remove();
+    });
+    guestCount = blocks.length;
+  }
+
+  addGuestBtn.addEventListener('click', addGuest);
+  // Start with 1 guest
+  addGuest();
 
   function setParkingOptions(isSameDayFlag) {
     const select = el("parkingOption");
@@ -126,12 +168,13 @@
   function validateAgeField(guestNumber) {
     const input = el(`guestAge${guestNumber}`);
     const error = el(`guestAgeError${guestNumber}`);
+    if (!input) return true;
     const value = input.value.trim();
     const age = Number(value);
     const isValid = value === "" || (Number.isInteger(age) && age >= 0 && age < 100);
 
     input.classList.toggle("invalid", !isValid);
-    error.classList.toggle("hidden", isValid);
+    if (error) error.classList.toggle("hidden", isValid);
     input.setCustomValidity(isValid ? "" : "Age must be a whole number below 100.");
 
     return isValid;
@@ -139,13 +182,9 @@
 
   function validateAllAgeFields() {
     let isValid = true;
-
-    for (let i = 1; i <= 4; i++) {
-      if (!validateAgeField(i)) {
-        isValid = false;
-      }
+    for (let i = 1; i <= guestCount; i++) {
+      if (!validateAgeField(i)) isValid = false;
     }
-
     return isValid;
   }
 
@@ -161,18 +200,27 @@
     document.body.scrollTop = 0;
 
     document.body.innerHTML = `
-      <div style="
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 24px;
-        box-sizing: border-box;
-      ">
-        <div style="max-width: 520px;">
-          <div style="font-size: 22px; font-weight: 700; line-height: 1.4;">${escapeHtml(text)}</div>
-          <div style="margin-top: 8px; font-size: 18px; line-height: 1.5;">You may close this window.</div>
+      <div class="bg-panel"><div class="bg-panel-img"></div><div class="bg-panel-overlay"></div></div>
+      <div class="form-panel" style="display:flex;align-items:center;justify-content:center;">
+        <div style="max-width:480px;width:100%;text-align:center;">
+          <div style="
+            width:64px;height:64px;border-radius:50%;
+            background:#f0fdf4;border:2px solid #bbf7d0;
+            display:flex;align-items:center;justify-content:center;
+            margin:0 auto 20px;font-size:26px;color:#16a34a;
+          ">✓</div>
+          <div style="font-size:1.4rem;font-weight:700;color:#121b21;margin-bottom:8px;letter-spacing:-.01em;">Registration Submitted!</div>
+          <div style="font-size:.88rem;color:#496b83;line-height:1.6;margin-bottom:24px;">${escapeHtml(text)}</div>
+          <div style="
+            background:#fff;border:1px solid #dee7ed;border-radius:12px;
+            padding:16px 20px;font-size:.82rem;color:#375062;text-align:left;line-height:1.8;
+          ">
+            <div style="font-weight:700;color:#121b21;margin-bottom:8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;">What happens next?</div>
+            <div>📧 Check your email for the authorization letter.</div>
+            <div>✍️ Sign above your name and reply to the email thread before check-in.</div>
+            <div>🪪 Show the signed letter and your valid ID to the guard on duty.</div>
+          </div>
+          <div style="margin-top:20px;font-size:.75rem;color:#5c85a3;">You may now close this window.</div>
         </div>
       </div>
     `;
@@ -208,57 +256,42 @@
   }
 
   function collectGuests() {
-    const guests = [{}, {}, {}, {}];
-
-    document.querySelectorAll("[data-g][data-f]").forEach(input => {
-      const gi = Number(input.dataset.g) - 1;
-      const f = input.dataset.f;
-
-      if (f === "idUpload") return;
-      guests[gi][f] = (input.value || "").trim();
-    });
-
-    document.querySelectorAll('input[type="file"][data-g][data-f="idUpload"]').forEach(inp => {
-      const gi = Number(inp.dataset.g) - 1;
-      guests[gi].idUploadEl = inp;
-    });
-
-    return guests
-      .map(g => ({
-        name: (g.name || "").trim(),
-        age: (g.age || "").trim(),
-        idType: (g.idType || "").trim(),
-        idUploadEl: g.idUploadEl
-      }))
-      .filter(g => g.name !== "");
+    const guests = [];
+    for (let i = 1; i <= guestCount; i++) {
+      guests.push({
+        name: (el(`guestName${i}`)?.value || "").trim(),
+        age: (el(`guestAge${i}`)?.value || "").trim(),
+        idType: (el(`guestIdType${i}`)?.value || "").trim(),
+        idUploadEl: el(`guestIdUpload${i}`)
+      });
+    }
+    return guests.filter(g => g.name !== "");
   }
 
   function validateGuestFields() {
     const guestInputs = [];
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= guestCount; i++) {
       const guest = {
         number: i,
-        name: el(`guestName${i}`).value.trim(),
-        age: el(`guestAge${i}`).value.trim(),
-        idType: el(`guestIdType${i}`).value.trim(),
-        files: el(`guestIdUpload${i}`).files
+        name: (el(`guestName${i}`)?.value || "").trim(),
+        age: (el(`guestAge${i}`)?.value || "").trim(),
+        idType: (el(`guestIdType${i}`)?.value || "").trim(),
+        files: el(`guestIdUpload${i}`)?.files || []
       };
       guestInputs.push(guest);
     }
 
     const guest1 = guestInputs[0];
-    if (!guest1.name) throw new Error("Guest 1 full name is required.");
+    if (!guest1 || !guest1.name) throw new Error("Guest 1 full name is required.");
     if (!guest1.age) throw new Error("Guest 1 age is required.");
     if (!guest1.idType) throw new Error("Guest 1 valid ID type is required.");
     if (!guest1.files.length) throw new Error("Guest 1 valid ID upload is required.");
 
     guestInputs.forEach(guest => {
       const hasAnyValue = guest.name || guest.age || guest.idType || guest.files.length;
-
       if (!hasAnyValue) return;
       if (guest.name.length > 50) throw new Error(`Guest ${guest.number} full name must be 50 characters or fewer.`);
       if (guest.files.length > 1) throw new Error(`Guest ${guest.number} can only upload 1 valid ID file.`);
-
       if (guest.age) {
         const age = Number(guest.age);
         if (!Number.isInteger(age) || age < 0 || age >= 100) {
